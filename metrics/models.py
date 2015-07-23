@@ -1,6 +1,10 @@
 import calendar
+from datetime import timedelta
+import random
+
 from django.db import models
 from django.db.models import Sum
+from django.utils import timezone
 
 
 class MetricsQuerySet(models.QuerySet):
@@ -59,6 +63,15 @@ class MetricsManager(models.Manager):
 
     def full_stats_for_media(self, media_id):
         return self.get_queryset().filter(media_id=media_id).total_plays()
+
+    def create_random(self):
+        today = timezone.now().date()
+        params = {}
+        params['date'] = today - timedelta(days=random.randrange(1, 90))
+        params['media_id'] = random.randrange(1, 10)
+        params['user_id'] = random.randrange(1, 10)
+        params['seconds_played'] = random.randrange(10, 600, 10)
+        self.create(**params)
 
 
 class UserVideoMetric(models.Model):

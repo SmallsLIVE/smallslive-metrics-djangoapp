@@ -15,6 +15,10 @@ setup(
     url='http://www.appsembler.com/',
     author='Filip Jukic',
     author_email='filip@appsembler.com',
+    install_reqs=[
+        'Django==1.8.3',
+        'djangorestframework==3.1.3'
+    ],
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',

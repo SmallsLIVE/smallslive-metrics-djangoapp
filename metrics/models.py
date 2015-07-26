@@ -2,10 +2,11 @@ import calendar
 import datetime
 import random
 
-import humanfriendly
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
+
+from .utils import format_timespan
 
 
 class MetricsQuerySet(models.QuerySet):
@@ -20,19 +21,19 @@ class MetricsManager(models.Manager):
     def counts_for_recording(self, recording_id, humanize=False):
         counts = self.get_queryset().filter(recording_id=recording_id).total_counts()
         if humanize:
-            counts['time_played'] = humanfriendly.format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'])
         return counts
 
     def counts_for_artist(self, artist_recording_ids, humanize=False):
         counts = self.get_queryset().filter(recording_id__in=artist_recording_ids).total_counts()
         if humanize:
-            counts['time_played'] = humanfriendly.format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'])
         return counts
 
     def all_time_counts(self, humanize=False):
         counts = self.get_queryset().total_counts()
         if humanize:
-            counts['time_played'] = humanfriendly.format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'])
         return
 
     def this_week_counts(self, artist_recording_ids=None, humanize=False):
@@ -54,7 +55,7 @@ class MetricsManager(models.Manager):
         else:
             counts = qs.total_counts()
         if humanize:
-            counts['time_played'] = humanfriendly.format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'])
         return counts
 
     def monthly_counts(self, month, year, artist_recording_ids=None, humanize=False):
@@ -74,7 +75,7 @@ class MetricsManager(models.Manager):
         else:
             counts = qs.total_counts()
         if humanize:
-            counts['time_played'] = humanfriendly.format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'])
         return counts
 
     def this_month_counts(self, humanize=False):
@@ -111,7 +112,7 @@ class MetricsManager(models.Manager):
         params = {}
         params['user_id'] = user_id
         for day in range(1, 90):
-            params['date'] = (today - timedelta(days=day)).date()
+            params['date'] = (today - datetime.timedelta(days=day)).date()
             for recording_id in range(1, 5):
                 params['recording_id'] = recording_id
                 params['seconds_played'] = random.randrange(10, 600, 10)

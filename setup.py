@@ -17,7 +17,8 @@ setup(
     author_email='filip@appsembler.com',
     install_reqs=[
         'Django==1.8.3',
-        'djangorestframework==3.1.3'
+        'djangorestframework==3.1.3',
+        'humanfriendly==1.32'
     ],
     classifiers=[
         'Environment :: Web Environment',

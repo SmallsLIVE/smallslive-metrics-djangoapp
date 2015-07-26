@@ -1,6 +1,8 @@
 import calendar
 import datetime
+import itertools
 import random
+
 
 from django.db import models
 from django.db.models import Sum
@@ -12,6 +14,9 @@ from .utils import format_timespan
 class MetricsQuerySet(models.QuerySet):
     def total_counts(self):
         return self.aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+
+    def total_counts_annotate(self):
+        return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
 
 
 class MetricsManager(models.Manager):
@@ -86,17 +91,45 @@ class MetricsManager(models.Manager):
         now = timezone.now()
         return self.monthly_counts(now.month, now.year, artist_recording_ids=artist_recording_ids, humanize=humanize)
 
-    def date_counts_for_recording(self, recording_id, month, year):
-        values = self.get_queryset().filter(
-            recording_id=recording_id, date__month=month, date__year=year).values_list(
-            'date', 'play_count', 'seconds_played').order_by('date')
-        days_in_month = calendar.monthrange(year, month)[1]
+    def date_counts(self, month, year, artist_recording_ids=None):
+        """
+        Returns a list of play counts and seconds played per day. If the requested month is the current
+        month, return values only up to the current day (don't add zeroes for remaining months)
+        """
+        qs = self.get_queryset().filter(date__month=month, date__year=year)
+        if artist_recording_ids:
+            if len(artist_recording_ids) == 1:
+                qs = qs.filter(recording_id=artist_recording_ids[0])
+            else:
+                qs = qs.filter(recording_id__in=artist_recording_ids)
+
+        qs = qs.values('date', 'recording_type').order_by('date').total_counts_annotate()
+
+        now = timezone.now().date()
+        if now.month == month and now.year == year:
+            days_in_month = now.day
+        else:
+            days_in_month = calendar.monthrange(year, month)[1]
         days = range(1, days_in_month+1)
-        day_counts = {date.day: count for date, count, seconds in values}
-        day_seconds = {date.day: count for date, count, seconds in values}
-        counts_list = [day_counts.get(day_number, 0) for day_number in days]
-        seconds_list = [day_seconds.get(day_number, 0) for day_number in days]
-        return (counts_list, seconds_list)
+        audio_play_counts = {}
+        audio_seconds_counts = {}
+        video_play_counts = {}
+        video_seconds_counts = {}
+        for entry in qs:
+            day = entry['date'].day
+            if entry['recording_type'] == 'V':
+                video_play_counts[day] = entry['play_count']
+                video_seconds_counts[day] = entry['seconds_played']
+            else:
+                audio_play_counts[day] = entry['play_count']
+                audio_seconds_counts[day] = entry['seconds_played']
+        counts = {}
+        counts['audio_counts_list'] = [audio_play_counts.get(day_number, 0) for day_number in days]
+        counts['audio_seconds_list'] = [audio_seconds_counts.get(day_number, 0) for day_number in days]
+        counts['video_counts_list'] = [video_play_counts.get(day_number, 0) for day_number in days]
+        counts['video_seconds_list'] = [video_seconds_counts.get(day_number, 0) for day_number in days]
+        counts['dates'] = ["{0}/{1}".format(month, day) for day in days]
+        return counts
 
     def create_random(self):
         today = timezone.now().date()
@@ -110,11 +143,12 @@ class MetricsManager(models.Manager):
     def create_random_for_user(self, user_id):
         today = timezone.now()
         params = {}
+        recordings = itertools.cycle([55, 81, 121, 166, 194])
         params['user_id'] = user_id
         for day in range(1, 90):
             params['date'] = (today - datetime.timedelta(days=day)).date()
-            for recording_id in range(1, 5):
-                params['recording_id'] = recording_id
+            for i in range(1, 3):
+                params['recording_id'] = next(recordings)  # Spike's and Ari's recordings
                 params['seconds_played'] = random.randrange(10, 600, 10)
                 params['play_count'] = random.randrange(1, 100, 1)
                 print params
@@ -128,6 +162,7 @@ class UserVideoMetric(models.Model):
     last_ping = models.DateTimeField(auto_now=True)
     seconds_played = models.IntegerField(default=0)
     play_count = models.IntegerField(default=1)  # it gets created on the first play
+    recording_type = models.CharField(max_length=1, choices=(('A', 'Audio'), ('V', 'Video')))
 
     objects = MetricsManager()
 

@@ -33,4 +33,4 @@ def format_timespan(num_seconds):
         else:
             # Remove insignificant data from the formatted timespan and format
             # it in a readable way.
-            return concatenate(result[:3])
+            return concatenate(result[:2])

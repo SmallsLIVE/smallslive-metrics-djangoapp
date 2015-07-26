@@ -124,10 +124,12 @@ class MetricsManager(models.Manager):
                 audio_play_counts[day] = entry['play_count']
                 audio_seconds_counts[day] = entry['seconds_played']
         counts = {}
-        counts['audio_counts_list'] = [audio_play_counts.get(day_number, 0) for day_number in days]
+        counts['audio_plays_list'] = [audio_play_counts.get(day_number, 0) for day_number in days]
         counts['audio_seconds_list'] = [audio_seconds_counts.get(day_number, 0) for day_number in days]
-        counts['video_counts_list'] = [video_play_counts.get(day_number, 0) for day_number in days]
+        counts['video_plays_list'] = [video_play_counts.get(day_number, 0) for day_number in days]
         counts['video_seconds_list'] = [video_seconds_counts.get(day_number, 0) for day_number in days]
+        counts['total_plays_list'] = [a+v for a, v in zip(counts['audio_plays_list'], counts['video_plays_list'])]
+        counts['total_seconds_list'] = [a+v for a, v in zip(counts['audio_seconds_list'], counts['video_seconds_list'])]
         counts['dates'] = ["{0}/{1}".format(month, day) for day in days]
         return counts
 

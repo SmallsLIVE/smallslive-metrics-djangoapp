@@ -6,7 +6,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='smallslive-metrics-app',
-    version='0.1.2',
+    version='0.1.3',
     packages=['metrics'],
     include_package_data=True,
     license='BSD License',  # example license
@@ -15,8 +15,8 @@ setup(
     url='http://www.appsembler.com/',
     author='Filip Jukic',
     author_email='filip@appsembler.com',
-    install_reqs=[
-        'Django==1.8.3',
+    install_requires=[
+        'Django>=1.7',
         'djangorestframework==3.1.3',
         'humanfriendly==1.32'
     ],

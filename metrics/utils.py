@@ -15,10 +15,11 @@ def format_timespan(num_seconds):
     Taken from the humanfriendly library and changed the time units to
     their abbreviations.
     """
+
     if num_seconds < 60:
         # Fast path.
-        rounded_number = round_number(num_seconds, num_seconds < 10)
-        return pluralize(rounded_number, 'second', 'seconds')
+        rounded_number = round_number(num_seconds, False)
+        return pluralize(rounded_number, 's', 's')
     else:
         # Slow path.
         result = []

@@ -13,7 +13,10 @@ from .utils import format_timespan
 
 class MetricsQuerySet(models.QuerySet):
     def total_counts(self):
-        return self.aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+        counts = self.aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+        counts['seconds_played'] = counts['seconds_played'] or 0
+        counts['play_count'] = counts['play_count'] or 0
+        return counts
 
     def total_counts_annotate(self):
         return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
@@ -51,8 +54,8 @@ class MetricsManager(models.Manager):
             last_week_start = week_start - datetime.timedelta(weeks=1)
             last_week_end = week_end - datetime.timedelta(weeks=1)
             last_week_counts = self.get_queryset().filter(date__range=(last_week_start, last_week_end)).total_counts()
-            this_week_seconds = int(counts['seconds_played'] or 0)
-            last_week_seconds = int(last_week_counts['seconds_played'] or 0)
+            this_week_seconds = int(counts['seconds_played'])
+            last_week_seconds = int(last_week_counts['seconds_played'])
             if last_week_seconds != 0:
                 counts['trend'] = ((this_week_seconds - last_week_seconds) / last_week_seconds) * 100
             else:
@@ -80,7 +83,7 @@ class MetricsManager(models.Manager):
         else:
             counts = qs.total_counts()
         if humanize:
-            counts['time_played'] = format_timespan(counts['seconds_played'])
+            counts['time_played'] = format_timespan(counts['seconds_played'] or 0)
         return counts
 
     def this_month_counts(self, humanize=False):
@@ -164,6 +167,7 @@ class UserVideoMetric(models.Model):
     last_ping = models.DateTimeField(auto_now=True)
     seconds_played = models.IntegerField(default=0)
     play_count = models.IntegerField(default=1)  # it gets created on the first play
+    event_id = models.PositiveIntegerField(blank=False)
     recording_type = models.CharField(max_length=1, choices=(('A', 'Audio'), ('V', 'Video')))
 
     objects = MetricsManager()

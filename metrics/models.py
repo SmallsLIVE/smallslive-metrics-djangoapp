@@ -11,6 +11,18 @@ from .utils import format_timespan
 
 
 class MetricsQuerySet(models.QuerySet):
+    def video_counts(self):
+        counts = self.filter(recording_type='V').aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+        counts['seconds_played'] = counts['seconds_played'] or 0
+        counts['play_count'] = counts['play_count'] or 0
+        return counts
+
+    def audio_counts(self):
+        counts = self.filter(recording_type='A').aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+        counts['seconds_played'] = counts['seconds_played'] or 0
+        counts['play_count'] = counts['play_count'] or 0
+        return counts
+
     def total_counts(self):
         counts = self.aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
         counts['seconds_played'] = counts['seconds_played'] or 0
@@ -38,7 +50,7 @@ class MetricsManager(models.Manager):
             percentage = None
         return percentage
 
-    def _calculate_week_trends(self, counts, week_start, week_end, event_id=None, recording_id=None):
+    def _calculate_week_trends(self, counts, week_start, week_end, recording_type=None, event_id=None, recording_id=None):
         last_week_start = week_start - datetime.timedelta(weeks=1)
         last_week_end = week_end - datetime.timedelta(weeks=1)
         qs = self.get_queryset().filter(date__range=(last_week_start, last_week_end))
@@ -46,7 +58,13 @@ class MetricsManager(models.Manager):
             qs = qs.filter(event_id=event_id)
         elif recording_id:
             qs = qs.filter(recording_id=recording_id)
-        last_week_counts = qs.total_counts()
+
+        if recording_type == "audio":
+            last_week_counts = qs.audio_counts()
+        elif recording_type == "video":
+            last_week_counts = qs.video_counts()
+        else:
+            last_week_counts = qs.total_counts()
         this_week_seconds = int(counts['seconds_played'])
         last_week_seconds = int(last_week_counts['seconds_played'])
         if last_week_seconds != 0:
@@ -62,7 +80,7 @@ class MetricsManager(models.Manager):
             counts['play_count_trend'] = None
         return counts
 
-    def _calculate_month_trends(self, counts, month, year, event_id=None, recording_id=None):
+    def _calculate_month_trends(self, counts, month, year, recording_type=None, event_id=None, recording_id=None):
         this_month = datetime.date(year, month, 1)
         last_month = this_month - datetime.timedelta(days=1)
         qs = self.get_queryset().filter(date__month=last_month.month, date__year=last_month.year)
@@ -70,7 +88,13 @@ class MetricsManager(models.Manager):
             qs = qs.filter(event_id=event_id)
         elif recording_id:
             qs = qs.filter(recording_id=recording_id)
-        last_month_counts = qs.total_counts()
+            
+        if recording_type == "audio":
+            last_month_counts = qs.audio_counts()
+        elif recording_type == "video":
+            last_month_counts = qs.video_counts()
+        else:
+            last_month_counts = qs.total_counts()
         this_month_seconds = counts['seconds_played']
         last_month_seconds = last_month_counts['seconds_played']
         if last_month_seconds != 0:
@@ -149,13 +173,32 @@ class MetricsManager(models.Manager):
         print counts
         return counts
 
-    def total_archive_counts(self, humanize=False):
+    def total_archive_counts(self, trends=False, recording_type=None, humanize=False):
         now = timezone.now()
         week_start = (now - datetime.timedelta(days=now.weekday())).date()
         week_end = week_start + datetime.timedelta(weeks=1)
-        this_week_counts = self.get_queryset().filter(date__range=(week_start, week_end)).total_counts()
-        this_month_counts = self.get_queryset().filter(date__month=now.month, date__year=now.year).total_counts()
-        all_time_counts = self.get_queryset().total_counts()
+        this_week_qs = self.get_queryset().filter(date__range=(week_start, week_end))
+        this_month_qs = self.get_queryset().filter(date__month=now.month, date__year=now.year)
+        all_time_qs = self.get_queryset()
+
+        if recording_type == 'audio':
+            this_week_counts = this_week_qs.audio_counts()
+            this_month_counts = this_month_qs.audio_counts()
+            all_time_counts = all_time_qs.audio_counts()
+        elif recording_type == 'video':
+            this_week_counts = this_week_qs.video_counts()
+            this_month_counts = this_month_qs.video_counts()
+            all_time_counts = all_time_qs.video_counts()
+        else:
+            this_week_counts = this_week_qs.total_counts()
+            this_month_counts = this_month_qs.total_counts()
+            all_time_counts = all_time_qs.total_counts()
+
+        if trends:
+            this_week_counts = self._calculate_week_trends(this_week_counts, week_start, week_end, recording_type=recording_type)
+            this_month_counts = self._calculate_month_trends(this_month_counts, now.month, now.year, recording_type=recording_type)
+            print this_month_counts
+
         if humanize:
             this_week_counts['time_played'] = format_timespan(this_week_counts['seconds_played'])
             this_month_counts['time_played'] = format_timespan(this_month_counts['seconds_played'])

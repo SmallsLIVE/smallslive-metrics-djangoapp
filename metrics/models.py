@@ -50,12 +50,15 @@ class MetricsManager(models.Manager):
             percentage = None
         return percentage
 
-    def _calculate_week_trends(self, counts, week_start, week_end, recording_type=None, event_id=None, recording_id=None):
+    def _calculate_week_trends(self, counts, week_start, week_end, recording_type=None, event_ids=None, recording_id=None):
         last_week_start = week_start - datetime.timedelta(weeks=1)
         last_week_end = week_end - datetime.timedelta(weeks=1)
         qs = self.get_queryset().filter(date__range=(last_week_start, last_week_end))
-        if event_id:
-            qs = qs.filter(event_id=event_id)
+        if event_ids:
+            if len(event_ids) > 1:
+                qs = qs.filter(event_id__in=event_ids)
+            else:
+                qs = qs.filter(event_id=event_ids[0])
         elif recording_id:
             qs = qs.filter(recording_id=recording_id)
 
@@ -80,12 +83,15 @@ class MetricsManager(models.Manager):
             counts['play_count_trend'] = None
         return counts
 
-    def _calculate_month_trends(self, counts, month, year, recording_type=None, event_id=None, recording_id=None):
+    def _calculate_month_trends(self, counts, month, year, recording_type=None, event_ids=None, recording_id=None):
         this_month = datetime.date(year, month, 1)
         last_month = this_month - datetime.timedelta(days=1)
         qs = self.get_queryset().filter(date__month=last_month.month, date__year=last_month.year)
-        if event_id:
-            qs = qs.filter(event_id=event_id)
+        if event_ids:
+            if len(event_ids) > 1:
+                qs = qs.filter(event_id__in=event_ids)
+            else:
+                qs = qs.filter(event_id=event_ids[0])
         elif recording_id:
             qs = qs.filter(recording_id=recording_id)
             
@@ -150,6 +156,20 @@ class MetricsManager(models.Manager):
             'all_time': all_time_counts
         }
         return counts
+
+    def all_time_for_artist(self, artist_event_ids, humanize=False):
+        all_time_counts = self.get_queryset().filter(event_id__in=artist_event_ids).total_counts()
+        total_archive_counts = self.total_archive_counts()
+        all_time_counts['play_count_percentage'] = self._calculate_percentage(all_time_counts['play_count'],
+                                                                              total_archive_counts['all_time'][
+                                                                                  'play_count'])
+        all_time_counts['seconds_played_percentage'] = self._calculate_percentage(all_time_counts['seconds_played'],
+                                                                                  total_archive_counts['all_time'][
+                                                                                      'seconds_played'])
+        if humanize:
+            all_time_counts['time_played'] = format_timespan(all_time_counts['seconds_played'])
+
+        return all_time_counts
 
     def counts_for_recording(self, recording_id, trends=False, humanize=False):
         now = timezone.now()
@@ -222,8 +242,8 @@ class MetricsManager(models.Manager):
         qs = self.get_queryset().filter(date__range=(week_start, week_end))
         if artist_event_ids:
             counts = qs.filter(event_id__in=artist_event_ids).total_counts()
-            if trends and len(artist_event_ids) == 1:
-                counts = self._calculate_week_trends(counts, week_start, week_end, event_id=artist_event_ids[0])
+            if trends:
+                counts = self._calculate_week_trends(counts, week_start, week_end, event_ids=artist_event_ids)
         else:
             counts = qs.total_counts()
         if humanize:
@@ -234,8 +254,8 @@ class MetricsManager(models.Manager):
         qs = self.get_queryset().filter(date__month=month, date__year=year)
         if artist_event_ids:
             counts = qs.filter(event_id__in=artist_event_ids).total_counts()
-            if trends and len(artist_event_ids) == 1:
-                self._calculate_month_trends(counts, month, year, event_id=artist_event_ids[0])
+            if trends:
+                counts = self._calculate_month_trends(counts, month, year, event_ids=artist_event_ids)
         else:
             counts = qs.total_counts()
         if humanize:
@@ -293,19 +313,24 @@ class MetricsManager(models.Manager):
         counts['dates'] = ["{0}/{1}".format(month, day) for day in days]
         return counts
 
-    def top_week_events(self, trends=False):
+    def top_week_events(self, artist_event_ids=None, trends=False):
         now = timezone.now()
         week_start = (now - datetime.timedelta(days=now.weekday())).date()
         week_end = week_start + datetime.timedelta(weeks=1)
-        counts = list(self.get_queryset().filter(date__range=(
-            week_start, week_end)).values('event_id').total_counts_annotate().order_by('-play_count')[:10])
+        qs = self.get_queryset().filter(date__range=(week_start, week_end))
+        if artist_event_ids:
+            qs = qs.filter(event_id__in=artist_event_ids)
+        counts = list(qs.values('event_id').total_counts_annotate().order_by('-play_count')[:10])
         if trends:
             for idx, count in enumerate(counts):
-                counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_id=count['event_id'])
+                counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_ids=count['event_id'])
         return counts
 
-    def top_all_time_events(self):
-        return self.get_queryset().values('event_id').total_counts_annotate().order_by('-play_count')[:10]
+    def top_all_time_events(self, artist_event_ids=None):
+        qs = self.get_queryset()
+        if artist_event_ids:
+            qs = qs.filter(event_id__in=artist_event_ids)
+        return qs.values('event_id').total_counts_annotate().order_by('-play_count')[:10]
 
     def create_random(self):
         today = timezone.now().date()

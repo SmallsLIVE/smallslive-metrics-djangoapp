@@ -307,14 +307,16 @@ class MetricsManager(models.Manager):
     def create_random_for_user(self, user_id):
         today = timezone.now()
         params = {}
-        recordings = itertools.cycle([55, 81, 121, 166, 194])
+        recordings = itertools.cycle([13326, 13396, 13327, 13397])
         params['user_id'] = user_id
         for day in range(1, 90):
             params['date'] = (today - datetime.timedelta(days=day)).date()
             for i in range(1, 3):
-                params['recording_id'] = next(recordings)  # Spike's and Ari's recordings
+                params['recording_id'] = next(recordings)  # Spike's recordings
                 params['seconds_played'] = random.randrange(10, 600, 10)
                 params['play_count'] = random.randrange(1, 100, 1)
+                params['recording_tyoe'] = random.choice(('A', 'V'))
+                params['recording_tyoe'] = 9594
                 self.create(**params)
 
 

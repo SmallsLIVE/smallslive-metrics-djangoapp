@@ -327,8 +327,8 @@ class MetricsManager(models.Manager):
                 params['recording_id'] = next(recordings)  # Spike's recordings
                 params['seconds_played'] = random.randrange(10, 600, 10)
                 params['play_count'] = random.randrange(1, 100, 1)
-                params['recording_tyoe'] = random.choice(('A', 'V'))
-                params['recording_tyoe'] = 9594
+                params['recording_type'] = random.choice(('A', 'V'))
+                params['event_id'] = 9594
                 self.create(**params)
 
 

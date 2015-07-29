@@ -170,7 +170,6 @@ class MetricsManager(models.Manager):
             'week': this_week_counts,
             'all_time': all_time_counts
         }
-        print counts
         return counts
 
     def total_archive_counts(self, trends=False, recording_type=None, humanize=False):
@@ -197,7 +196,6 @@ class MetricsManager(models.Manager):
         if trends:
             this_week_counts = self._calculate_week_trends(this_week_counts, week_start, week_end, recording_type=recording_type)
             this_month_counts = self._calculate_month_trends(this_month_counts, now.month, now.year, recording_type=recording_type)
-            print this_month_counts
 
         if humanize:
             this_week_counts['time_played'] = format_timespan(this_week_counts['seconds_played'])
@@ -294,6 +292,20 @@ class MetricsManager(models.Manager):
         counts['total_seconds_list'] = [a+v for a, v in zip(counts['audio_seconds_list'], counts['video_seconds_list'])]
         counts['dates'] = ["{0}/{1}".format(month, day) for day in days]
         return counts
+
+    def top_week_events(self, trends=False):
+        now = timezone.now()
+        week_start = (now - datetime.timedelta(days=now.weekday())).date()
+        week_end = week_start + datetime.timedelta(weeks=1)
+        counts = list(self.get_queryset().filter(date__range=(
+            week_start, week_end)).values('event_id').total_counts_annotate().order_by('-play_count')[:10])
+        if trends:
+            for idx, count in enumerate(counts):
+                counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_id=count['event_id'])
+        return counts
+
+    def top_all_time_events(self):
+        return self.get_queryset().values('event_id').total_counts_annotate().order_by('-play_count')[:10]
 
     def create_random(self):
         today = timezone.now().date()

@@ -3,10 +3,10 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from rest_framework import generics, status
+from rest_framework import generics, status, views
 from rest_framework.response import Response
 from .models import UserVideoMetric
-from .serializers import UserVideoMetricSerializer
+from .serializers import MonthMetricsSerializer, UserVideoMetricSerializer
 
 
 class MetricView(generics.CreateAPIView):
@@ -48,3 +48,21 @@ class MetricView(generics.CreateAPIView):
         serializer.save()
 
 metric_view = MetricView.as_view()
+
+
+class EventCountsView(views.APIView):
+    def get(self, request, format=None):
+        try:
+            month = int(request.query_params.get('month'))
+            year = int(request.query_params.get('year'))
+            event_id = int(request.query_params.get('event_id'))
+        except TypeError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        counts = UserVideoMetric.objects.date_counts(month, year, [event_id])
+        s = MonthMetricsSerializer(data=counts)
+        if s.is_valid():
+            return Response(data=s.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+event_counts = EventCountsView.as_view()

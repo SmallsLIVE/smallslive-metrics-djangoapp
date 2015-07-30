@@ -66,3 +66,21 @@ class EventCountsView(views.APIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 event_counts = EventCountsView.as_view()
+
+
+class ArtistCountsView(views.APIView):
+    def post(self, request, format=None):
+        try:
+            month = int(request.data.get('month'))
+            year = int(request.data.get('year'))
+            event_ids = request.data.get('event_ids')
+        except TypeError:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        counts = UserVideoMetric.objects.date_counts(month, year, event_ids)
+        s = MonthMetricsSerializer(data=counts)
+        if s.is_valid():
+            return Response(data=s.data)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+artist_counts = ArtistCountsView.as_view()

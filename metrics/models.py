@@ -46,6 +46,7 @@ class MetricsManager(models.Manager):
     def _calculate_percentage(self, event_stat, total_stat):
         if total_stat > 0:
             percentage = float(event_stat) / float(total_stat)
+            percentage *= 100
         else:
             percentage = None
         return percentage

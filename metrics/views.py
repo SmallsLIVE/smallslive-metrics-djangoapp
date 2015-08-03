@@ -78,6 +78,11 @@ class ArtistCountsView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         counts = UserVideoMetric.objects.date_counts(month, year, event_ids)
+        archive_counts = UserVideoMetric.objects.date_counts(month, year)
+        for key, val in archive_counts.items():
+            new_key = "archive_" + key
+            counts[new_key] = val
+        print counts
         s = MonthMetricsSerializer(data=counts)
         if s.is_valid():
             return Response(data=s.data)

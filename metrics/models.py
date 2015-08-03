@@ -323,7 +323,7 @@ class MetricsManager(models.Manager):
         counts = list(qs.values('event_id').total_counts_annotate().order_by('-play_count')[:10])
         if trends:
             for idx, count in enumerate(counts):
-                counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_ids=count['event_id'])
+                counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_ids=[count['event_id']])
         return counts
 
     def top_all_time_events(self, artist_event_ids=None):

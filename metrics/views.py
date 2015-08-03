@@ -4,12 +4,16 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 from rest_framework import generics, status, views
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import UserVideoMetric
 from .serializers import MonthMetricsSerializer, UserVideoMetricSerializer
 
 
 class MetricView(generics.CreateAPIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
     model = UserVideoMetric
     serializer_class = UserVideoMetricSerializer
 
@@ -51,6 +55,9 @@ metric_view = MetricView.as_view()
 
 
 class EventCountsView(views.APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
     def get(self, request, format=None):
         try:
             month = int(request.query_params.get('month'))
@@ -60,16 +67,23 @@ class EventCountsView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         counts = UserVideoMetric.objects.date_counts(month, year, [event_id])
+        print counts
         s = MonthMetricsSerializer(data=counts)
         if s.is_valid():
             return Response(data=s.data)
+        print s.errors
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 event_counts = EventCountsView.as_view()
 
 
 class ArtistCountsView(views.APIView):
+    authentication_classes = (TokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, format=None):
+        print self
+        print request.user
         try:
             month = int(request.data.get('month'))
             year = int(request.data.get('year'))
@@ -82,7 +96,6 @@ class ArtistCountsView(views.APIView):
         for key, val in archive_counts.items():
             new_key = "archive_" + key
             counts[new_key] = val
-        print counts
         s = MonthMetricsSerializer(data=counts)
         if s.is_valid():
             return Response(data=s.data)

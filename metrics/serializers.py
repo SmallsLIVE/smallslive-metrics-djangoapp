@@ -31,20 +31,26 @@ class MonthMetricsSerializer(serializers.Serializer):
         child=fields.IntegerField(min_value=0)
     )
     archive_video_seconds_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )
     archive_audio_seconds_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )
     archive_total_seconds_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )
     archive_video_plays_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )
     archive_audio_plays_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )
     archive_total_plays_list = fields.ListField(
-        child=fields.IntegerField(min_value=0)
+        child=fields.IntegerField(min_value=0),
+        required=False
     )

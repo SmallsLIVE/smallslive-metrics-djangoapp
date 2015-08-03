@@ -3,6 +3,7 @@ import datetime
 import itertools
 import random
 
+from django.contrib.auth.models import AbstractUser, PermissionsMixin, AbstractBaseUser
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
@@ -376,3 +377,4 @@ class UserVideoMetric(models.Model):
     def __str__(self):
         return "V{0} U{1} D{2.year}/{2.month}/{2.day} C{3}".format(
             self.recording_id, self.user_id, self.date, self.seconds_played)
+

@@ -21,19 +21,27 @@ class MetricView(generics.CreateAPIView):
         return self.create(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
+        print request.META
+        if not self.headers_validation(request):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             try:
                 now = timezone.now()
                 metric = UserVideoMetric.objects.select_for_update().get(
-                    media_id=serializer.validated_data.get('media_id'),
+                    recording_id=serializer.validated_data.get('recording_id'),
+                    recording_type=serializer.validated_data.get('recording_type'),
+                    event_id=serializer.validated_data.get('event_id'),
                     user_id=serializer.validated_data.get('user_id'),
                     date=now.date()
                 )
                 if self.passes_validation(now, metric):
                     http_status = status.HTTP_204_NO_CONTENT
                     metric.seconds_played = F('seconds_played') + settings.PING_INTERVAL
+                    if (metric.last_ping + timedelta(hours=1) < now):
+                        metric.play_count = F('play_count') + 1
                     metric.last_ping = now
                     metric.save()
                 else:
@@ -47,6 +55,11 @@ class MetricView(generics.CreateAPIView):
         allowed_ping_interval = (now >= (metric.last_ping + timedelta(seconds=settings.PING_INTERVAL)))
         less_than_daily_limit = metric.seconds_played <= settings.DAILY_LIMIT_PER_MEDIA
         return allowed_ping_interval and less_than_daily_limit
+
+    def headers_validation(self, request):
+        host_header = request.META.get('HTTP_ORIGIN')
+        host_header_valid = host_header.startswith(settings.SMALLSLIVE_SITE)
+        return host_header_valid
 
     def perform_create(self, serializer):
         serializer.save()

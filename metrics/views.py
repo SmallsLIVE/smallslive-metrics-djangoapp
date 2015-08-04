@@ -1,5 +1,6 @@
 from datetime import timedelta
 from django.conf import settings
+from django.core import signing
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -21,11 +22,12 @@ class MetricView(generics.CreateAPIView):
         return self.create(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        print request.META
+        signed_data = request.data.get('signed_data')
+        data = signing.loads(signed_data)
         if not self.headers_validation(request):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             try:
@@ -80,11 +82,9 @@ class EventCountsView(views.APIView):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         counts = UserVideoMetric.objects.date_counts(month, year, [event_id])
-        print counts
         s = MonthMetricsSerializer(data=counts)
         if s.is_valid():
             return Response(data=s.data)
-        print s.errors
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
 event_counts = EventCountsView.as_view()
@@ -95,8 +95,6 @@ class ArtistCountsView(views.APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request, format=None):
-        print self
-        print request.user
         try:
             month = int(request.data.get('month'))
             year = int(request.data.get('year'))

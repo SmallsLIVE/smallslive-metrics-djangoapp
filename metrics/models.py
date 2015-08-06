@@ -3,7 +3,6 @@ import datetime
 import itertools
 import random
 
-from django.contrib.auth.models import AbstractUser, PermissionsMixin, AbstractBaseUser
 from django.db import models
 from django.db.models import Sum
 from django.utils import timezone
@@ -43,6 +42,11 @@ class MetricsManager(models.Manager):
         if humanize:
             counts['time_played'] = format_timespan(counts['seconds_played'])
         return counts
+
+    def seconds_played_for_all_events(self, start_date, end_date):
+        qs = self.get_queryset().filter(date__range=(start_date, end_date)).values(
+            'event_id').annotate(seconds_played=Sum('seconds_played'))
+        return qs
 
     def _calculate_percentage(self, event_stat, total_stat):
         if total_stat > 0:

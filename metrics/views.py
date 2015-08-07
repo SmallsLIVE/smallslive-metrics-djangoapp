@@ -54,7 +54,7 @@ class MetricView(generics.CreateAPIView):
         return Response(status=http_status)
 
     def passes_validation(self, now, metric):
-        allowed_ping_interval = (now >= (metric.last_ping + timedelta(seconds=settings.PING_INTERVAL)))
+        allowed_ping_interval = (now >= (metric.last_ping + timedelta(seconds=settings.PING_INTERVAL_WITH_BUFFER)))
         less_than_daily_limit = metric.seconds_played <= settings.DAILY_LIMIT_PER_MEDIA
         return allowed_ping_interval and less_than_daily_limit
 

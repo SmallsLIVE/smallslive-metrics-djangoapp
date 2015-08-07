@@ -9,3 +9,4 @@ class SmallsUser(AbstractBaseUser, PermissionsMixin):
 
     class Meta(AbstractBaseUser.Meta):
         db_table = 'users_smallsuser'
+        managed=False

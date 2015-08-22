@@ -24,6 +24,7 @@ class MetricView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         signed_data = request.data.get('signed_data')
         data = signing.loads(signed_data)
+        print data
         if not self.headers_validation(request):
             return Response(status=status.HTTP_403_FORBIDDEN)
 

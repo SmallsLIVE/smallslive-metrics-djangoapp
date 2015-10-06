@@ -1,4 +1,5 @@
 import logging
+import urllib
 from datetime import timedelta
 from django.conf import settings
 from django.core import signing
@@ -26,7 +27,7 @@ class MetricView(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         signed_data = request.data.get('signed_data')
-        data = signing.loads(signed_data)
+        data = signing.loads(urllib.unquote(signed_data))
         logger.info(data)
         if not self.headers_validation(request):
             return Response(status=status.HTTP_403_FORBIDDEN)

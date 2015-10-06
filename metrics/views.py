@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from django.conf import settings
 from django.core import signing
@@ -10,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import UserVideoMetric
 from .serializers import MonthMetricsSerializer, UserVideoMetricSerializer
+
+logger = logging.getLogger(__name__)
 
 
 class MetricView(generics.CreateAPIView):
@@ -24,7 +27,7 @@ class MetricView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         signed_data = request.data.get('signed_data')
         data = signing.loads(signed_data)
-        print data
+        logger.info(data)
         if not self.headers_validation(request):
             return Response(status=status.HTTP_403_FORBIDDEN)
 

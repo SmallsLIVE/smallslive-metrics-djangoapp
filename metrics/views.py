@@ -26,8 +26,7 @@ class MetricView(generics.CreateAPIView):
         return self.create(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        signed_data = urllib.unquote(request.data.get('signed_data'))
-        logger.info(signed_data)
+        signed_data = request.data.get('signed_data')
         data = signing.loads(signed_data)
         if not self.headers_validation(request):
             return Response(status=status.HTTP_403_FORBIDDEN)
@@ -44,7 +43,7 @@ class MetricView(generics.CreateAPIView):
                     user_id=serializer.validated_data.get('user_id'),
                     date=now.date()
                 )
-                if self.passes_validation(now, metric):
+                if self.passes_validation(now, metric, request.user):
                     http_status = status.HTTP_204_NO_CONTENT
                     metric.seconds_played = F('seconds_played') + settings.PING_INTERVAL
                     if (metric.last_ping + timedelta(hours=1) < now):
@@ -58,10 +57,13 @@ class MetricView(generics.CreateAPIView):
                 http_status = status.HTTP_201_CREATED
         return Response(status=http_status)
 
-    def passes_validation(self, now, metric):
+    def passes_validation(self, now, metric, user):
         allowed_ping_interval = (now >= (metric.last_ping + timedelta(seconds=settings.PING_INTERVAL_WITH_BUFFER)))
         less_than_daily_limit = metric.seconds_played <= settings.DAILY_LIMIT_PER_MEDIA
-        return allowed_ping_interval and less_than_daily_limit
+        passes_validation = allowed_ping_interval and less_than_daily_limit
+        if not passes_validation:
+            logger.warning("User {} failed validation".format(user.email))
+        return passes_validation
 
     def headers_validation(self, request):
         host_header = request.META.get('HTTP_ORIGIN')

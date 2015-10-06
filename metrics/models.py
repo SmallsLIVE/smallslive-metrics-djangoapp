@@ -273,9 +273,10 @@ class MetricsManager(models.Manager):
         return self.monthly_counts(now.month, now.year, artist_event_ids=artist_event_ids,
                                    trends=trends, humanize=humanize)
 
-    def this_month_counts_for_artist(self, artist_event_ids, humanize=False):
+    def this_month_counts_for_artist(self, artist_event_ids, trends=False, humanize=False):
         now = timezone.now()
-        return self.monthly_counts(now.month, now.year, artist_event_ids=artist_event_ids, humanize=humanize)
+        return self.monthly_counts(now.month, now.year, artist_event_ids=artist_event_ids,
+                                   trends=trends, humanize=humanize)
 
     def date_counts(self, month, year, artist_event_ids=None):
         """

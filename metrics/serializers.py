@@ -12,13 +12,13 @@ class MonthMetricsSerializer(serializers.Serializer):
     dates = fields.ListField(
         child=fields.CharField(min_length=3, max_length=5)
     )
-    video_seconds_list = fields.ListField(
+    video_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0)
     )
-    audio_seconds_list = fields.ListField(
+    audio_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0)
     )
-    total_seconds_list = fields.ListField(
+    total_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0)
     )
     video_plays_list = fields.ListField(
@@ -30,15 +30,15 @@ class MonthMetricsSerializer(serializers.Serializer):
     total_plays_list = fields.ListField(
         child=fields.IntegerField(min_value=0)
     )
-    archive_video_seconds_list = fields.ListField(
+    archive_video_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0),
         required=False
     )
-    archive_audio_seconds_list = fields.ListField(
+    archive_audio_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0),
         required=False
     )
-    archive_total_seconds_list = fields.ListField(
+    archive_total_minutes_list = fields.ListField(
         child=fields.IntegerField(min_value=0),
         required=False
     )

@@ -13,7 +13,7 @@ from .utils import format_timespan
 class MetricsQuerySet(models.QuerySet):
     def video_counts(self):
         counts = self.filter(recording_type='V').aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
-        counts['seconds_played'] = counts['seconds_played'] or 0
+        counts['minutes_played'] = counts['seconds_played'] or 0
         counts['play_count'] = counts['play_count'] or 0
         return counts
 
@@ -299,24 +299,24 @@ class MetricsManager(models.Manager):
             days_in_month = calendar.monthrange(year, month)[1]
         days = range(1, days_in_month+1)
         audio_play_counts = {}
-        audio_seconds_counts = {}
+        audio_minutes_counts = {}
         video_play_counts = {}
-        video_seconds_counts = {}
+        video_minutes_counts = {}
         for entry in qs:
             day = entry['date'].day
             if entry['recording_type'] == 'V':
                 video_play_counts[day] = entry['play_count']
-                video_seconds_counts[day] = entry['seconds_played']
+                video_minutes_counts[day] = entry['seconds_played'] / 60
             else:
                 audio_play_counts[day] = entry['play_count']
-                audio_seconds_counts[day] = entry['seconds_played']
+                audio_minutes_counts[day] = entry['seconds_played'] / 60
         counts = {}
         counts['audio_plays_list'] = [audio_play_counts.get(day_number, 0) for day_number in days]
-        counts['audio_seconds_list'] = [audio_seconds_counts.get(day_number, 0) for day_number in days]
+        counts['audio_minutes_list'] = [audio_minutes_counts.get(day_number, 0) for day_number in days]
         counts['video_plays_list'] = [video_play_counts.get(day_number, 0) for day_number in days]
-        counts['video_seconds_list'] = [video_seconds_counts.get(day_number, 0) for day_number in days]
+        counts['video_minutes_list'] = [video_minutes_counts.get(day_number, 0) for day_number in days]
         counts['total_plays_list'] = [a+v for a, v in zip(counts['audio_plays_list'], counts['video_plays_list'])]
-        counts['total_seconds_list'] = [a+v for a, v in zip(counts['audio_seconds_list'], counts['video_seconds_list'])]
+        counts['total_minutes_list'] = [a+v for a, v in zip(counts['audio_minutes_list'], counts['video_minutes_list'])]
         counts['dates'] = ["{0}/{1}".format(month, day) for day in days]
         return counts
 

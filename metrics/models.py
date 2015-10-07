@@ -351,16 +351,28 @@ class MetricsManager(models.Manager):
     def create_random_for_user(self, user_id):
         today = timezone.now()
         params = {}
-        recordings = itertools.cycle([13326, 13396, 13327, 13397])
+        recordings = [
+            # Spike's recordings
+            {'id': 13326, 'recording_type': 'V', 'event_id': 9594},
+            {'id': 13396, 'recording_type': 'A', 'event_id': 9594},
+            {'id': 18093, 'recording_type': 'V', 'event_id': 10061},
+            {'id': 17731, 'recording_type': 'A', 'event_id': 9849},
+            # Carlos Abadie's recordings
+            {'id': 966, 'recording_type': 'A', 'event_id': 5568},
+            {'id': 1037, 'recording_type': 'A', 'event_id': 5478},
+            {'id': 16962, 'recording_type': 'V', 'event_id': 9670},
+        ]
+        recordings_iter = itertools.cycle(recordings)
         params['user_id'] = user_id
         for day in range(1, 90):
             params['date'] = (today - datetime.timedelta(days=day)).date()
-            for i in range(1, 3):
-                params['recording_id'] = next(recordings)  # Spike's recordings
+            for i in range(1, random.randrange(2, 6)):
+                rec = next(recordings_iter)
+                params['recording_id'] = rec.get('id')
                 params['seconds_played'] = random.randrange(10, 600, 10)
                 params['play_count'] = random.randrange(1, 100, 1)
-                params['recording_type'] = random.choice(('A', 'V'))
-                params['event_id'] = 9594
+                params['recording_type'] = rec.get('recording_type')
+                params['event_id'] = rec.get('event_id')
                 self.create(**params)
 
 

@@ -77,14 +77,14 @@ class MetricsManager(models.Manager):
         this_week_seconds = int(counts['seconds_played'])
         last_week_seconds = int(last_week_counts['seconds_played'])
         if last_week_seconds != 0:
-            counts['seconds_played_trend'] = ((this_week_seconds - last_week_seconds) / last_week_seconds) * 100
+            counts['seconds_played_trend'] = ((this_week_seconds - last_week_seconds) / float(last_week_seconds)) * 100
         else:
             counts['seconds_played_trend'] = None
 
         this_week_plays = counts['play_count']
         last_week_plays = last_week_counts['play_count']
         if last_week_plays != 0:
-            counts['play_count_trend'] = ((this_week_plays - last_week_plays) / last_week_plays) * 100
+            counts['play_count_trend'] = ((this_week_plays - last_week_plays) / float(last_week_plays)) * 100
         else:
             counts['play_count_trend'] = None
         return counts
@@ -110,14 +110,14 @@ class MetricsManager(models.Manager):
         this_month_seconds = counts['seconds_played']
         last_month_seconds = last_month_counts['seconds_played']
         if last_month_seconds != 0:
-            counts['seconds_played_trend'] = ((this_month_seconds - last_month_seconds) / last_month_seconds) * 100
+            counts['seconds_played_trend'] = ((this_month_seconds - last_month_seconds) / float(last_month_seconds)) * 100
         else:
             counts['seconds_played_trend'] = None
 
         this_month_plays = counts['play_count']
         last_month_plays = last_month_counts['play_count']
         if last_month_plays != 0:
-            counts['play_count_trend'] = ((this_month_plays - last_month_plays) / last_month_plays) * 100
+            counts['play_count_trend'] = ((this_month_plays - last_month_plays) / float(last_month_plays)) * 100
         else:
             counts['play_count_trend'] = None
         return counts
@@ -200,8 +200,8 @@ class MetricsManager(models.Manager):
 
     def total_archive_counts(self, trends=False, recording_type=None, humanize=False):
         now = timezone.now()
-        week_start = (now - datetime.timedelta(days=now.weekday())).date()
-        week_end = week_start + datetime.timedelta(weeks=1)
+        week_start = (now - datetime.timedelta(days=6)).date()
+        week_end = now
         this_week_qs = self.get_queryset().filter(date__range=(week_start, week_end))
         this_month_qs = self.get_queryset().filter(date__month=now.month, date__year=now.year)
         all_time_qs = self.get_queryset()

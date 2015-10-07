@@ -84,11 +84,14 @@ class EventCountsView(views.APIView):
         try:
             month = int(request.query_params.get('month'))
             year = int(request.query_params.get('year'))
-            event_id = int(request.query_params.get('event_id'))
         except TypeError:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-        counts = UserVideoMetric.objects.date_counts(month, year, [event_id])
+        event_id = request.query_params.get('event_id')
+        if event_id:
+            counts = UserVideoMetric.objects.date_counts(month, year, [int(event_id)])
+        else:
+            counts = UserVideoMetric.objects.date_counts(month, year)
         s = MonthMetricsSerializer(data=counts)
         if s.is_valid():
             return Response(data=s.data)

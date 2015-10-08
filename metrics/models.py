@@ -13,7 +13,7 @@ from .utils import format_timespan
 class MetricsQuerySet(models.QuerySet):
     def video_counts(self):
         counts = self.filter(recording_type='V').aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
-        counts['minutes_played'] = counts['seconds_played'] or 0
+        counts['seconds_played'] = counts['seconds_played'] or 0
         counts['play_count'] = counts['play_count'] or 0
         return counts
 

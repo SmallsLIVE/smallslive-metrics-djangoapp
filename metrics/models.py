@@ -246,7 +246,8 @@ class MetricsManager(models.Manager):
         week_start = (now - datetime.timedelta(days=now.weekday())).date()
         week_end = week_start + datetime.timedelta(weeks=1)
         qs = self.get_queryset().filter(date__range=(week_start, week_end))
-        if artist_event_ids:
+        # needed because sometimes an empty list is passed
+        if artist_event_ids is not None:
             counts = qs.filter(event_id__in=artist_event_ids).total_counts()
             if trends:
                 counts = self._calculate_week_trends(counts, week_start, week_end, event_ids=artist_event_ids)
@@ -258,7 +259,8 @@ class MetricsManager(models.Manager):
 
     def monthly_counts(self, month, year, artist_event_ids=None, trends=False, humanize=False):
         qs = self.get_queryset().filter(date__month=month, date__year=year)
-        if artist_event_ids:
+        # needed because sometimes an empty list is passed
+        if artist_event_ids is not None:
             counts = qs.filter(event_id__in=artist_event_ids).total_counts()
             if trends:
                 counts = self._calculate_month_trends(counts, month, year, event_ids=artist_event_ids)

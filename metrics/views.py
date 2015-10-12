@@ -62,7 +62,8 @@ class MetricView(generics.CreateAPIView):
         less_than_daily_limit = metric.seconds_played <= settings.DAILY_LIMIT_PER_MEDIA
         passes_validation = allowed_ping_interval and less_than_daily_limit
         if not passes_validation:
-            logger.warning("User {} failed validation".format(user.email))
+            logger.warning("User {} failed validation, U_ID:{}, R_ID:{}, SEC:{}".format(
+                user.email, user.id, metric.recording_id, metric.seconds_played))
         return passes_validation
 
     def headers_validation(self, request):

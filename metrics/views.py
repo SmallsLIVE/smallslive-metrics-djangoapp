@@ -66,8 +66,8 @@ class MetricView(generics.CreateAPIView):
         return passes_validation
 
     def headers_validation(self, request):
-        host_header = request.META.get('HTTP_ORIGIN')
-        host_header_valid = host_header.startswith(settings.SMALLSLIVE_SITE)
+        host_header = request.META.get('HTTP_REFERER')
+        host_header_valid = host_header and host_header.startswith(settings.SMALLSLIVE_SITE)
         return host_header_valid
 
     def perform_create(self, serializer):

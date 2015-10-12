@@ -59,7 +59,7 @@ class MetricView(generics.CreateAPIView):
 
     def passes_validation(self, now, metric, user):
         allowed_ping_interval = (now >= (metric.last_ping + timedelta(seconds=settings.PING_INTERVAL_WITH_BUFFER)))
-        less_than_daily_limit = metric.seconds_played <= settings.DAILY_LIMIT_PER_MEDIA
+        less_than_daily_limit = metric.seconds_played < settings.DAILY_LIMIT_PER_MEDIA
         passes_validation = allowed_ping_interval and less_than_daily_limit
         if not passes_validation:
             logger.warning("User {} failed validation, U_ID:{}, R_ID:{}, SEC:{}".format(

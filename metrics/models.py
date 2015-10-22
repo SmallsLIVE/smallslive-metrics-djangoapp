@@ -11,6 +11,12 @@ from .utils import format_timespan
 
 
 class MetricsQuerySet(models.QuerySet):
+    def audio(self):
+        return self.filter(recording_type='A')
+
+    def video(self):
+        return self.filter(recording_type='V')
+
     def video_counts(self):
         counts = self.filter(recording_type='V').aggregate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
         counts['seconds_played'] = counts['seconds_played'] or 0
@@ -31,6 +37,8 @@ class MetricsQuerySet(models.QuerySet):
 
     def total_counts_annotate(self):
         return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
+
+
 
 
 class MetricsManager(models.Manager):
@@ -376,6 +384,14 @@ class MetricsManager(models.Manager):
                 params['recording_type'] = rec.get('recording_type')
                 params['event_id'] = rec.get('event_id')
                 self.create(**params)
+
+    def most_popular_audio(self, count=4):
+        return self.get_queryset().audio().values('event_id').annotate(
+            count=Sum('play_count')).order_by('-count')[:count]
+
+    def most_popular_video(self, count=4):
+        return self.get_queryset().video().values('event_id').annotate(
+            count=Sum('play_count')).order_by('-count')[:count]
 
 
 class UserVideoMetric(models.Model):

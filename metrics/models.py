@@ -337,7 +337,7 @@ class MetricsManager(models.Manager):
         qs = self.get_queryset().filter(date__range=(week_start, week_end))
         if artist_event_ids:
             qs = qs.filter(event_id__in=artist_event_ids)
-        counts = list(qs.values('event_id').total_counts_annotate().order_by('-play_count')[:10])
+        counts = list(qs.values('event_id').total_counts_annotate().order_by('-seconds_played')[:10])
         if trends:
             for idx, count in enumerate(counts):
                 counts[idx] = self._calculate_week_trends(count, week_start, week_end, event_ids=[count['event_id']])
@@ -347,7 +347,7 @@ class MetricsManager(models.Manager):
         qs = self.get_queryset()
         if artist_event_ids:
             qs = qs.filter(event_id__in=artist_event_ids)
-        return qs.values('event_id').total_counts_annotate().order_by('-play_count')[:10]
+        return qs.values('event_id').total_counts_annotate().order_by('-seconds_played')[:10]
 
     def create_random(self):
         today = timezone.now().date()

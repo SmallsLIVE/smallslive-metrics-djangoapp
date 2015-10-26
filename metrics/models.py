@@ -39,10 +39,13 @@ class MetricsQuerySet(models.QuerySet):
         return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
 
     def most_popular_audio(self):
-        return self.audio().values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
+        return self.audio().most_popular()
 
     def most_popular_video(self):
-        return self.video().values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
+        return self.video().most_popular()
+
+    def most_popular(self):
+        return self.values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
 
 
 
@@ -395,6 +398,9 @@ class MetricsManager(models.Manager):
 
     def most_popular_video(self, count=4):
         return self.get_queryset().most_popular_video()[:count]
+
+    def most_popular(self, count=4):
+        return self.get_queryset().most_popular()[:count]
 
 
 class UserVideoMetric(models.Model):

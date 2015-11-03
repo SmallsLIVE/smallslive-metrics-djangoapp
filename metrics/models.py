@@ -38,14 +38,21 @@ class MetricsQuerySet(models.QuerySet):
     def total_counts_annotate(self):
         return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
 
-    def most_popular_audio(self):
-        return self.audio().most_popular()
+    def most_popular_audio(self, weekly=False):
+        return self.audio().most_popular(weekly=weekly)
 
-    def most_popular_video(self):
-        return self.video().most_popular()
+    def most_popular_video(self, weekly=False):
+        return self.video().most_popular(weekly=weekly)
 
-    def most_popular(self):
-        return self.values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
+    def most_popular(self, weekly=False):
+        qs = self
+        if weekly:
+            now = timezone.now()
+            week_start = (now - datetime.timedelta(days=now.weekday())).date()
+            week_end = week_start + datetime.timedelta(weeks=1)
+            qs = qs.filter(date__range=(week_start, week_end))
+            print qs
+        return qs.values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
 
 
 
@@ -393,14 +400,14 @@ class MetricsManager(models.Manager):
                 params['event_id'] = rec.get('event_id')
                 self.create(**params)
 
-    def most_popular_audio(self, count=4):
-        return self.get_queryset().most_popular_audio()[:count]
+    def most_popular_audio(self, count=4, weekly=False):
+        return self.get_queryset().most_popular_audio(weekly=weekly)[:count]
 
-    def most_popular_video(self, count=4):
-        return self.get_queryset().most_popular_video()[:count]
+    def most_popular_video(self, count=4, weekly=False):
+        return self.get_queryset().most_popular_video(weekly=weekly)[:count]
 
-    def most_popular(self, count=4):
-        return self.get_queryset().most_popular()[:count]
+    def most_popular(self, count=4, weekly=False):
+        return self.get_queryset().most_popular(weekly=weekly)[:count]
 
 
 class UserVideoMetric(models.Model):

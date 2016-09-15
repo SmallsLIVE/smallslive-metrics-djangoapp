@@ -16,7 +16,7 @@ setup(
     author='Filip Jukic',
     author_email='filip@appsembler.com',
     install_requires=[
-        'Django>=1.7',
+        'Django>=1.7,<1.8',
         'djangorestframework==3.1.3',
         'humanfriendly==1.32'
     ],

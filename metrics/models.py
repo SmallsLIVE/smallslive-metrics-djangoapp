@@ -9,6 +9,10 @@ from django.utils import timezone
 
 from .utils import format_timespan
 
+RANGE_YEAR = 'year'
+RANGE_MONTH = 'month'
+RANGE_WEEK = 'week'
+
 
 class MetricsQuerySet(models.QuerySet):
     def audio(self):
@@ -38,22 +42,64 @@ class MetricsQuerySet(models.QuerySet):
     def total_counts_annotate(self):
         return self.annotate(seconds_played=Sum('seconds_played'), play_count=Sum('play_count'))
 
-    def most_popular_audio(self, weekly=False):
-        return self.audio().most_popular(weekly=weekly)
+    def most_popular_audio(self, weekly=False, range_size=None):
+        return self.audio().most_popular(weekly=weekly, range_size=range_size)
 
-    def most_popular_video(self, weekly=False):
-        return self.video().most_popular(weekly=weekly)
+    def most_popular_video(self, weekly=False, range_size=None):
+        return self.video().most_popular(weekly=weekly, range_size=range_size)
 
-    def most_popular(self, weekly=False):
+    def most_popular(self, weekly=False, range_size=None):
         qs = self
-        if weekly:
-            now = timezone.now()
-            week_start = (now - datetime.timedelta(days=now.weekday())).date()
-            week_end = week_start + datetime.timedelta(weeks=1)
-            qs = qs.filter(date__range=(week_start, week_end))
-            print qs
-        return qs.values('event_id').annotate(count=Sum('seconds_played')).order_by('-count')
 
+        range_start = None
+        range_end = None
+        if range_size:
+            if range_size == RANGE_WEEK:
+                range_end, range_start = self.get_weekly_range()
+            elif range_size == RANGE_MONTH:
+                range_end, range_start = self.get_monthly_range()
+            elif range_size == RANGE_YEAR:
+                range_end, range_start = self.get_year_range()
+
+        else:
+            if weekly:
+                range_end, range_start = self.get_weekly_range()
+
+        if range_start and range_end:
+            qs = qs.filter(date__range=(range_start, range_end))
+
+        return qs.values('event_id').annotate(
+            count=Sum('seconds_played')
+        ).order_by('-count')
+
+    def get_weekly_range(self):
+        now = timezone.now()
+        range_start = (now - datetime.timedelta(days=now.weekday())).date()
+        range_end = range_start + datetime.timedelta(weeks=1)
+        return range_end, range_start
+
+    def get_monthly_range(self):
+        now = timezone.now()
+        current_year = now.year
+        current_month = now.month
+
+        range_start = datetime.date(current_year, current_month, 1)
+        range_end = datetime.date(
+            current_year, current_month, calendar.monthrange(
+                current_year, current_month
+            )[1]
+        )
+
+        return range_end, range_start
+
+    def get_year_range(self):
+        now = timezone.now()
+        current_year = now.year
+
+        range_start = datetime.date(current_year, 1, 1)
+        range_end = datetime.date(current_year, 12, 31)
+
+        return range_end, range_start
 
 
 class MetricsManager(models.Manager):
@@ -400,14 +446,20 @@ class MetricsManager(models.Manager):
                 params['event_id'] = rec.get('event_id')
                 self.create(**params)
 
-    def most_popular_audio(self, count=4, weekly=False):
-        return self.get_queryset().most_popular_audio(weekly=weekly)[:count]
+    def most_popular_audio(self, count=4, weekly=False, range_size=None):
+        return self.get_queryset().most_popular_audio(
+            weekly=weekly, range_size=range_size
+        )[:count]
 
-    def most_popular_video(self, count=4, weekly=False):
-        return self.get_queryset().most_popular_video(weekly=weekly)[:count]
+    def most_popular_video(self, count=4, weekly=False, range_size=None):
+        return self.get_queryset().most_popular_video(
+            weekly=weekly, range_size=range_size
+        )[:count]
 
-    def most_popular(self, count=4, weekly=False):
-        return self.get_queryset().most_popular(weekly=weekly)[:count]
+    def most_popular(self, count=4, weekly=False, range_size=None):
+        return self.get_queryset().most_popular(
+            weekly=weekly, range_size=range_size
+        )[:count]
 
 
 class UserVideoMetric(models.Model):

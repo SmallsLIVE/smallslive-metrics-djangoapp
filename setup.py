@@ -7,7 +7,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name='smallslive-metrics-app',
     version='0.1.40',
-    packages=['metrics', 'metrics_users'],
+    packages=['metrics', 'metrics.migrations', 'metrics_users'],
     include_package_data=True,
     license='BSD License',  # example license
     description='',

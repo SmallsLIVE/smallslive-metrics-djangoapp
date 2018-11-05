@@ -470,6 +470,7 @@ class UserVideoMetric(models.Model):
     seconds_played = models.IntegerField(default=0)
     play_count = models.IntegerField(default=1)  # it gets created on the first play
     event_id = models.PositiveIntegerField(blank=False)
+    event_date = models.DateTimeField(default=timezone.now)
     recording_type = models.CharField(max_length=1, choices=(('A', 'Audio'), ('V', 'Video')))
 
     objects = MetricsManager()

@@ -40,7 +40,6 @@ class MetricView(generics.CreateAPIView):
                     recording_id=serializer.validated_data.get('recording_id'),
                     recording_type=serializer.validated_data.get('recording_type'),
                     event_id=serializer.validated_data.get('event_id'),
-                    event_date=serializer.validated_data.get('event_date'),
                     user_id=serializer.validated_data.get('user_id'),
                     date=now.date()
                 )

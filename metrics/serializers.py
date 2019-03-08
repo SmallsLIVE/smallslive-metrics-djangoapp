@@ -3,6 +3,9 @@ from .models import UserVideoMetric
 
 
 class UserVideoMetricSerializer(serializers.ModelSerializer):
+
+    event_date = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S')
+
     class Meta:
         model = UserVideoMetric
         validators = []
